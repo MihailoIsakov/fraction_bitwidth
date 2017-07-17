@@ -1,10 +1,11 @@
+import pdb
 import numpy as np
 
 from activations import relu, relu_derivative
 from scipy.signal import savgol_filter
 
 
-def test(inputs, targets, fraction, lr, conf, weight_mean=0, weight_variance=500, iter=10000, \
+def test(inputs, targets, fraction, lr, conf, weight_mean=0, weight_variance=500, iter=10000,
         func=relu, func_der=relu_derivative, verbosity="low"):
     """
     Trains a neural network with integer inputs and weights, where the integer values are treated as fixed point values.
@@ -29,13 +30,8 @@ def test(inputs, targets, fraction, lr, conf, weight_mean=0, weight_variance=500
     """
     assert len(conf) == 2
 
-    np.random.seed(0xdeadbeec)
-
     x = np.rint(inputs * 2**fraction).astype(int)
     y = np.rint(targets * 2**fraction).astype(int)
-
-    shuffle = np.random.permutation(np.arange(len(x)))
-    x, y  = x[shuffle], y[shuffle]
 
     w = np.random.normal(weight_mean, weight_variance, (conf[1], conf[0]))
     w = np.rint(w).astype(int)
@@ -57,7 +53,6 @@ def test(inputs, targets, fraction, lr, conf, weight_mean=0, weight_variance=500
         delta = np.round(delta).astype(int)
 
         updates = delta.reshape(len(delta), 1) * z0.reshape(1, len(z0))
-        print np.mean(np.abs(updates))
         updates = np.right_shift(updates, fraction+lr)
 
         w = w + updates
@@ -73,13 +68,20 @@ def test(inputs, targets, fraction, lr, conf, weight_mean=0, weight_variance=500
 def test_classification(inputs, labels, fraction, lr, conf, weight_mean=0, weight_variance=500, iter=10000, 
         func=relu, func_der=relu_derivative, verbosity="low", smooth_window=101):
 
+    np.random.seed(0xdeadbeec)
+
+    # one hot vector 
     targets = np.zeros((len(inputs), conf[1]))
     targets[np.arange(len(inputs)).astype(int), labels.astype(int)] = 1.0
+    
+    # shuffle both inputs and outputs
+    shuffle = np.random.permutation(np.arange(len(inputs)))
+    inputs, targets  = inputs[shuffle], targets[shuffle]
 
     activations = test(inputs=inputs, targets=targets, fraction=fraction, lr=lr, conf=conf, weight_mean=weight_mean,
             weight_variance=weight_variance, iter=iter, func=func, func_der=func_der, verbosity=verbosity)
     
-    classification = np.argmax(activations, axis=1) == np.tile(labels, iter/len(inputs)+1)[:iter]
+    classification = np.argmax(activations, axis=1) == np.argmax(np.tile(targets, (iter/len(inputs)+1, 1))[:iter], axis=1)
     smooth_error = savgol_filter(classification, smooth_window, 2, mode="mirror")
 
     return smooth_error
