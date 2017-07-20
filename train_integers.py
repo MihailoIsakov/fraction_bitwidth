@@ -61,6 +61,7 @@ def test(inputs, targets, fraction, lr, conf, weight_mean=0, weight_variance=500
 
         if verbosity == "low": 
             print np.sum(np.abs(target - a1)) / 2.0**fraction
+            print a1, target
 
     return activations
 
@@ -141,8 +142,8 @@ def test_classification(inputs, labels, fraction, lr, conf, weight_mean=0, weigh
     targets[np.arange(len(inputs)).astype(int), labels.astype(int)] = 1.0
     
     # shuffle both inputs and outputs
-    shuffle = np.random.permutation(np.arange(len(inputs)))
-    inputs, targets  = inputs[shuffle], targets[shuffle]
+    # shuffle = np.random.permutation(np.arange(len(inputs)))
+    # inputs, targets  = inputs[shuffle], targets[shuffle]
 
     activations = test(inputs=inputs, targets=targets, fraction=fraction, lr=lr, conf=conf, weight_mean=weight_mean,
             weight_variance=weight_variance, iter=iter, func=func, func_der=func_der, verbosity=verbosity)
@@ -172,3 +173,16 @@ def test_classification_save_values(inputs, labels, fraction, lr, conf, weight_m
     return values
 
 
+def test_regression(inputs, labels, fraction, lr, conf, weight_mean=0, weight_variance=500, iter=10000, 
+        func=relu, func_der=relu_derivative, verbosity="low", smooth_window=101):
+
+    np.random.seed(0xdeadbeec)
+
+    # shuffle both inputs and outputs
+    shuffle = np.random.permutation(np.arange(len(inputs)))
+    inputs, labels = inputs[shuffle], labels[shuffle]
+
+    values = test(inputs=inputs, targets=labels, fraction=fraction, lr=lr, conf=conf, weight_mean=weight_mean,
+            weight_variance=weight_variance, iter=iter, func=func, func_der=func_der, verbosity=verbosity)
+
+    return values
